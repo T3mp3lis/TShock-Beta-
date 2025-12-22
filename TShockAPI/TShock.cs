@@ -1645,8 +1645,10 @@ namespace TShockAPI
 				return;
 			}
 
-			if ((player.State < (int)ConnectionState.Complete || player.Dead) && (int)type > 12 && (int)type != 16 && (int)type != 42 && (int)type != 50 &&
-				(int)type != 38 && (int)type != 21 && (int)type != 22 && type != PacketTypes.SyncLoadout)
+			if ((player.State < (int)ConnectionState.Complete) &&
+			    type > PacketTypes.PlayerSpawn && type != PacketTypes.PlayerHp && type != PacketTypes.PlayerMana &&
+			    type != PacketTypes.PlayerBuff && type != PacketTypes.PasswordSend && type != PacketTypes.ItemDrop &&
+			    type != PacketTypes.ItemOwner && type != PacketTypes.SyncLoadout)
 			{
 				e.Handled = true;
 				return;
