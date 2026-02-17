@@ -142,7 +142,7 @@ namespace TShockAPI
 					{ PacketTypes.FoodPlatterTryPlacing, HandleFoodPlatterTryPlacing },
 					{ PacketTypes.SyncCavernMonsterType, HandleSyncCavernMonsterType },
 					{ PacketTypes.SyncLoadout, HandleSyncLoadout },
-					{ PacketTypes.DeadCellsDisplayJarTryPlacing, HandleDeadCellsDisplayJarTryPlacing },
+					{ PacketTypes.TEDeadCellsDisplayJar, HandleTEDeadCellsDisplayJar },
 				};
 		}
 
@@ -2501,7 +2501,7 @@ namespace TShockAPI
 		/// <summary>
 		/// For use in a DeadCellsDisplayJar placement event.
 		/// </summary>
-		public class DeadCellsDisplayJarTryPlacingEventArgs : GetDataHandledEventArgs
+		public class TEDeadCellsDisplayJarEventArgs : GetDataHandledEventArgs
 		{
 			/// <summary>
 			/// The X tile position of the placement action.
@@ -2532,14 +2532,14 @@ namespace TShockAPI
 		/// <summary>
 		/// Called when a player attempts to place an item into a Dead Cells Display Jar.
 		/// </summary>
-		public static HandlerList<DeadCellsDisplayJarTryPlacingEventArgs> DeadCellsDisplayJarTryPlacing = new HandlerList<DeadCellsDisplayJarTryPlacingEventArgs>();
+		public static HandlerList<TEDeadCellsDisplayJarEventArgs> TEDeadCellsDisplayJar = new HandlerList<TEDeadCellsDisplayJarEventArgs>();
 		
-		private static bool OnDeadCellsDisplayJarTryPlacing(TSPlayer player, MemoryStream data, short x, short y, short itemType, byte prefix, short stack)
+		private static bool OnTEDeadCellsDisplayJar(TSPlayer player, MemoryStream data, short x, short y, short itemType, byte prefix, short stack)
 		{
-			if (DeadCellsDisplayJarTryPlacing == null)
+			if (TEDeadCellsDisplayJar == null)
 				return false;
 		
-			var args = new DeadCellsDisplayJarTryPlacingEventArgs
+			var args = new TEDeadCellsDisplayJarEventArgs
 			{
 				Player = player,
 				Data = data,
@@ -2550,7 +2550,7 @@ namespace TShockAPI
 				Stack = stack
 			};
 		
-			DeadCellsDisplayJarTryPlacing.Invoke(null, args);
+			TEDeadCellsDisplayJar.Invoke(null, args);
 			return args.Handled;
 		}
 
@@ -4866,7 +4866,7 @@ namespace TShockAPI
 			return false;
 		}
 
-		private static bool HandleDeadCellsDisplayJarTryPlacing(GetDataHandlerArgs args)
+		private static bool HandleTEDeadCellsDisplayJar(GetDataHandlerArgs args)
 		{
 			short x = args.Data.ReadInt16();
 			short y = args.Data.ReadInt16();
@@ -4874,7 +4874,7 @@ namespace TShockAPI
 			byte prefix = args.Data.ReadInt8();
 			short stack = args.Data.ReadInt16();
 		
-			if (OnDeadCellsDisplayJarTryPlacing(args.Player,args.Data, x, y, itemType, prefix, stack))
+			if (OnTEDeadCellsDisplayJar(args.Player,args.Data, x, y, itemType, prefix, stack))
 			{
 				return true;
 			}
