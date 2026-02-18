@@ -3078,7 +3078,11 @@ namespace TShockAPI
 			{ BuffID.Shimmer, 100 },
 			{ BuffID.Venom, 1800 },
 			{ BuffID.CursedInferno, 600 },
+<<<<<<< HEAD
 			{ BuffID.OnFire, 19392 }, // It's supposed to be 600, but it's actually 19392. And I can't find 19132 anywhere.
+=======
+			{ BuffID.OnFire, 19392 }, // FTW world: 216000 overflows to ushort -> 19392 for torch slime
+>>>>>>> test/general-devel
 			{ BuffID.Ichor, 1140 },
 			{ BuffID.Confused, 16684 },
 			{ BuffID.Poisoned, 3600 },
