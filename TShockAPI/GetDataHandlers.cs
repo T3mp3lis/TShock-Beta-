@@ -4085,20 +4085,11 @@ namespace TShockAPI
 		{
 			BitsByte flag = (BitsByte)args.Data.ReadByte();
 			short id = args.Data.ReadInt16();
-<<<<<<< HEAD
-			float x = args.Data.ReadSingle();
-			float y = args.Data.ReadSingle();
-			byte style = args.Data.ReadInt8();
-
-			int type = 0;
-			int extraInfo = 0;
-=======
 			Vector2 position = args.Data.ReadVector2();
 			byte style = args.Data.ReadInt8();
 
 			int type = 0;
 			int extraInfo = -1;
->>>>>>> test/general-devel
 			bool getPositionFromTarget = false;
 
 			if (flag[0])
@@ -4109,23 +4100,8 @@ namespace TShockAPI
 				getPositionFromTarget = true;
 			if (flag[3])
 				extraInfo = args.Data.ReadInt32();
-<<<<<<< HEAD
-			if (flag[3])
-				extraInfo = args.Data.ReadInt32();
-			
-            //update take position from target 
-			if (getPositionFromTarget)
-			{
-				if (type == 2 && id < Main.maxPlayers && Main.player[id] != null)
-				{
-					x = Main.player[id].position.X;
-					y = Main.player[id].position.Y;
-				}
-			}
-=======
 			if (getPositionFromTarget)
 				position = Main.player[id].position;
->>>>>>> test/general-devel
 
 			if (OnTeleport(args.Player, args.Data, id, flag, position.X, position.Y, style, extraInfo))
 				return true;
