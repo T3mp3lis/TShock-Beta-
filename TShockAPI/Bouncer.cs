@@ -1204,21 +1204,20 @@ namespace TShockAPI
 				return;
 			}
 
-			// Item removed by PacketTypes.SyncItemDespawn now
-			// if (type == 0)
-			// {
-			// 	if (!args.Player.IsInRange((int)(Main.item[id].position.X / 16f), (int)(Main.item[id].position.Y / 16f)))
-			// 	{
-			// 		// Causes item duplications. Will be re added if necessary
-			// 		//args.Player.SendData(PacketTypes.ItemDrop, "", id);
-			// 		TShock.Log.ConsoleDebug(GetString("Bouncer / OnItemDrop rejected from dupe range check from {0}", args.Player.Name));
-			// 		args.Handled = true;
-			// 		return;
-			// 	}
-			//
-			// 	args.Handled = false;
-			// 	return;
-			// }
+			if (type == 0)
+			{
+				if (!args.Player.IsInRange((int)(Main.item[id].position.X / 16f), (int)(Main.item[id].position.Y / 16f)))
+				{
+					// Causes item duplications. Will be re added if necessary
+					//args.Player.SendData(PacketTypes.ItemDrop, "", id);
+					TShock.Log.ConsoleDebug(GetString("Bouncer / OnItemDrop rejected from dupe range check from {0}", args.Player.Name));
+					args.Handled = true;
+					return;
+				}
+
+				args.Handled = false;
+				return;
+			}
 
 			if (!args.Player.IsInRange((int)(pos.X / 16f), (int)(pos.Y / 16f), 128))
 			{
@@ -2469,11 +2468,21 @@ namespace TShockAPI
 					return;
 				}
 			}
-			else if (type == TileID.GardenGnome)
+			else if (type == TileID.KiteAnchor)
+			{
+				if (style != 0)
+				{
+					TShock.Log.ConsoleDebug(GetString("Bouncer / OnPlaceObject rejected {0} due to invalid kite anchor style {1}", args.Player.Name, style));
+					args.Player.SendTileSquareCentered(x, y, 4);
+					args.Handled = true;
+					return;
+				}
+			}
+			else if (type == TileID.CritterAnchor)
 			{
 				if (style is > 4 or < 0)
 				{
-					TShock.Log.ConsoleDebug(GetString("Bouncer / OnPlaceObject rejected {0} due to invalid garden gnome style {1}", args.Player.Name, style));
+					TShock.Log.ConsoleDebug(GetString("Bouncer / OnPlaceObject rejected {0} due to invalid critter anchor style {1}", args.Player.Name, style));
 					args.Player.SendTileSquareCentered(x, y, 4);
 					args.Handled = true;
 					return;
@@ -2481,18 +2490,34 @@ namespace TShockAPI
 			}
 			else
 			{
+				List<int> allowTypes = [args.Player.TPlayer.inventory[args.Player.TPlayer.selectedItem].createTile];
+				List<int> allowStyles = [args.Player.TPlayer.inventory[args.Player.TPlayer.selectedItem].placeStyle];
+				var flexibleTileWand = args.Player.SelectedItem.GetFlexibleTileWand();
+				if (flexibleTileWand != null)
+				{
+					var flexibleTypes = flexibleTileWand._options
+						.SelectMany(kvp => kvp.Value.Options)
+						.Select(option => option.TileIdToPlace);
+
+					allowTypes.AddRange(flexibleTypes);
+
+					var flexibleStyles = flexibleTileWand._options
+						.SelectMany(kvp => kvp.Value.Options)
+						.Select(option => option.TileStyleToPlace);
+
+					allowStyles.AddRange(flexibleStyles);
+				}
 				// This is necessary to check in order to prevent special tiles such as
 				// queen bee larva, paintings etc that use this packet from being placed
 				// without selecting the right item.
-				if (type != args.Player.TPlayer.inventory[args.Player.TPlayer.selectedItem].createTile)
+				if (!allowTypes.Contains(type))
 				{
-					TShock.Log.ConsoleDebug(GetString("Bouncer / OnPlaceObject rejected awkward tile creation/selection from {0}", args.Player.Name));
+					TShock.Log.ConsoleError(GetString("Bouncer / OnPlaceObject rejected object placement with invalid tile type {1} (expected {2}) from {0}", args.Player.Name, type, string.Join(',', allowTypes)));
 					args.Player.SendTileSquareCentered(x, y, 4);
 					args.Handled = true;
 					return;
 				}
-
-				if (args.Player.SelectedItem.placeStyle != style)
+				if (!allowStyles.Contains(style))
 				{
 					int biomeTorchPlaceStyle = args.Player.SelectedItem.placeStyle;
 					{
@@ -2510,7 +2535,7 @@ namespace TShockAPI
 					var validCampfire = args.Player.SelectedItem.createTile == TileID.Campfire && biomeCampfirePlaceStyle == style;
 					if (!args.Player.TPlayer.unlockedBiomeTorches || (!validTorch && !validCampfire))
 					{
-						TShock.Log.ConsoleError(GetString("Bouncer / OnPlaceObject rejected object placement with invalid style {1} (expected {2}) from {0}", args.Player.Name, style, args.Player.SelectedItem.placeStyle));
+						TShock.Log.ConsoleError(GetString("Bouncer / OnPlaceObject rejected object placement with invalid style {1} (expected {2}) from {0}", args.Player.Name, style, string.Join(',', allowStyles)));
 						args.Player.SendTileSquareCentered(x, y, 4);
 						args.Handled = true;
 						return;
@@ -3078,9 +3103,9 @@ namespace TShockAPI
 			{ BuffID.Shimmer, 100 },
 			{ BuffID.Venom, 1800 },
 			{ BuffID.CursedInferno, 600 },
-			{ BuffID.OnFire, 19392 }, // It's supposed to be 600, but it's actually 19392. And I can't find 19132 anywhere.
+			{ BuffID.OnFire, 19392 }, // FTW world: 216000 overflows to ushort -> 19392 for torch slime
 			{ BuffID.Ichor, 1140 },
-			{ BuffID.Confused, 16684 },
+			{ BuffID.Confused, short.MaxValue },
 			{ BuffID.Poisoned, 3600 },
 			{ BuffID.Midas, 120 },
 			{ BuffID.Bleeding, 720 },
