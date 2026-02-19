@@ -1,4 +1,4 @@
-﻿/*
+/*
 TShock, a server mod for Terraria
 Copyright (C) 2011-2019 Pryaxis & TShock Contributors
 
@@ -2733,6 +2733,7 @@ namespace TShockAPI
 			bool blockedSlot = slotFlags[1];
 
 			// Players send a slot update packet for each inventory slot right after they've joined.
+			// The last slot the client sends is Count - 1 (Count is total slots, so Count - 1 is the last index)
 			bool bypassTrashCanCheck = false;
 			if (plr == args.Player.Index && !args.Player.HasSentInventory && slot == PlayerItemSlotID.Count - 1) // equals to 989, avoid hardcoding
 			{
@@ -2778,6 +2779,63 @@ namespace TShockAPI
 			}
 
 			return false;
+		}
+		// 1.4.5 reserved 40+160 slots per bank in network protocol instead of 40.
+		// This function maps the network slot IDs(0-989) to the internal NetItem slot IDs(0-349).
+		private static int NetworkSlotToInternalSlot(int networkSlot)
+		{
+			if (networkSlot < PlayerItemSlotID.Bank1_0)
+				return networkSlot;
+
+			if (networkSlot < PlayerItemSlotID.Bank1_0 + NetItem.PiggySlots)
+				return NetItem.PiggyIndex.Item1 + (networkSlot - PlayerItemSlotID.Bank1_0);
+
+			if (networkSlot < PlayerItemSlotID.Bank2_0)
+				return -1;
+
+			if (networkSlot < PlayerItemSlotID.Bank2_0 + NetItem.SafeSlots)
+				return NetItem.SafeIndex.Item1 + (networkSlot - PlayerItemSlotID.Bank2_0);
+
+			if (networkSlot < PlayerItemSlotID.TrashItem)
+				return -1;
+
+			if (networkSlot == PlayerItemSlotID.TrashItem)
+				return NetItem.TrashIndex.Item1;
+
+			if (networkSlot < PlayerItemSlotID.Bank3_0)
+				return -1;
+
+			if (networkSlot < PlayerItemSlotID.Bank3_0 + NetItem.ForgeSlots)
+				return NetItem.ForgeIndex.Item1 + (networkSlot - PlayerItemSlotID.Bank3_0);
+
+			if (networkSlot < PlayerItemSlotID.Bank4_0)
+				return -1;
+
+			if (networkSlot < PlayerItemSlotID.Bank4_0 + NetItem.VoidSlots)
+				return NetItem.VoidIndex.Item1 + (networkSlot - PlayerItemSlotID.Bank4_0);
+
+			if (networkSlot < PlayerItemSlotID.Loadout1_Armor_0)
+				return -1;
+
+			if (networkSlot < PlayerItemSlotID.Loadout1_Armor_0 + NetItem.LoadoutArmorSlots)
+				return NetItem.Loadout1Armor.Item1 + (networkSlot - PlayerItemSlotID.Loadout1_Armor_0);
+
+			if (networkSlot < PlayerItemSlotID.Loadout1_Dye_0 + NetItem.LoadoutDyeSlots)
+				return NetItem.Loadout1Dye.Item1 + (networkSlot - PlayerItemSlotID.Loadout1_Dye_0);
+
+			if (networkSlot < PlayerItemSlotID.Loadout2_Armor_0 + NetItem.LoadoutArmorSlots)
+				return NetItem.Loadout2Armor.Item1 + (networkSlot - PlayerItemSlotID.Loadout2_Armor_0);
+
+			if (networkSlot < PlayerItemSlotID.Loadout2_Dye_0 + NetItem.LoadoutDyeSlots)
+				return NetItem.Loadout2Dye.Item1 + (networkSlot - PlayerItemSlotID.Loadout2_Dye_0);
+
+			if (networkSlot < PlayerItemSlotID.Loadout3_Armor_0 + NetItem.LoadoutArmorSlots)
+				return NetItem.Loadout3Armor.Item1 + (networkSlot - PlayerItemSlotID.Loadout3_Armor_0);
+
+			if (networkSlot < PlayerItemSlotID.Loadout3_Dye_0 + NetItem.LoadoutDyeSlots)
+				return NetItem.Loadout3Dye.Item1 + (networkSlot - PlayerItemSlotID.Loadout3_Dye_0);
+
+			return -1;
 		}
 
 		// 1.4.5 reserved 40+160 slots per bank in network protocol instead of 40.
@@ -4552,6 +4610,17 @@ namespace TShockAPI
 
 			args.Player.Dead = true;
 			args.Player.RespawnTimer = TShock.Config.Settings.RespawnSeconds;
+
+			// Clear item reservations so items dropped by or given to this player can be picked up by anyone.
+			int playerIndex = args.Player.Index;
+			for (int i = 0; i < Main.maxItems; i++)
+			{
+				if (Main.item[i].active && Main.item[i].playerIndexTheItemIsReservedFor == playerIndex)
+				{
+					Main.item[i].playerIndexTheItemIsReservedFor = 255;
+					NetMessage.SendData((int)PacketTypes.ItemOwner, -1, -1, NetworkText.Empty, i, 255f);
+				}
+			}
 
 			if (Main.ServerSideCharacter && !args.Player.HasPermission(Permissions.bypassssc))
 			{
