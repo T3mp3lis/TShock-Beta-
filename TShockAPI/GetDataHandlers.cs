@@ -2887,7 +2887,7 @@ namespace TShockAPI
 					args.Player.spawnSynced = true;
 					return false;
 				}
-
+				args.TPlayer.Spawn(context);
 				// spawn the player before teleporting
 				NetMessage.SendData((int)PacketTypes.PlayerSpawn, -1, args.Player.Index, null, args.Player.Index, (int)PlayerSpawnContext.ReviveFromDeath);
 
