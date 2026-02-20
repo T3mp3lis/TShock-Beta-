@@ -769,8 +769,9 @@ namespace TShockAPI
 						{
 							var digtoiseProjectile = Main.projectile
 								.FirstOrDefault(p =>
-									p is { active: true, type: 1098 } && p.owner == args.Player.Index);
+									p is { active: true, type: ProjectileID.PalworldDigtoise } && p.owner == args.Player.Index);
 
+							// Digtoise starts digging
 							if (digtoiseProjectile?.ai[0] is 1f or 2f or 3f
 							    && digtoiseProjectile.ai[1] > 40f)
 							{
@@ -854,15 +855,6 @@ namespace TShockAPI
 							}
 						}
 					}
-
-					// Acorn Slingshot can only place saplings, reject any other tile placement
-					if (selectedItem.type == ItemID.AcornSlingshot && editData != TileID.Saplings)
-					{
-						TShock.Log.ConsoleDebug(GetString("Bouncer / OnTileEdit rejected from using acorn slingshot but not placing saplings {0} {1} {2}", args.Player.Name, action, editData));
-						args.Player.SendTileSquareCentered(tileX, tileY, 4);
-						args.Handled = true;
-					}
-
 					// Handle placement action if the player is using an Ice Rod but not placing the iceblock.
 					if (selectedItem.type == ItemID.IceRod && editData != TileID.MagicalIceBlock)
 					{
@@ -879,9 +871,12 @@ namespace TShockAPI
 						    selectedItem.type != ItemID.StickyBomb &&
 						    selectedItem.type != ItemID.AcornAxe &&
 						    selectedItem.type != ItemID.StaffofRegrowth &&
-						    selectedItem.type != ItemID.AcornSlingshot &&
-						    (args.Player.TPlayer.mount.Type != MountID.DiggingMoleMinecart ||
-						     editData != TileID.MinecartTrack))
+						    !(args.Player.RecentlyCreatedProjectiles.Any(x =>
+							      x.Type == ProjectileID.AcornSlingshotAcorn) &&
+						      editData == TileID.Saplings) &&
+						    !(args.Player.TPlayer.mount.Type == MountID.DiggingMoleMinecart &&
+						      editData == TileID.MinecartTrack)
+						   )
 						{
 							TShock.Log.ConsoleDebug(GetString(
 								"Bouncer / OnTileEdit rejected from tile placement not matching selected item createTile {0} {1} {2} selectedItemID:{3} createTile:{4}",
@@ -1187,8 +1182,6 @@ namespace TShockAPI
 			// player is attempting to crash clients
 			if (type < -48 || type >= Terraria.ID.ItemID.Count)
 			{
-				// Causes item duplications. Will be re added later if necessary
-				//args.Player.SendData(PacketTypes.SyncItemDespaw, "", id);
 				TShock.Log.ConsoleDebug(GetString("Bouncer / OnItemDrop rejected from attempt crash from {0}", args.Player.Name));
 				args.Handled = true;
 				return;
