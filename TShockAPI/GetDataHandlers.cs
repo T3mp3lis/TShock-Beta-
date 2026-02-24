@@ -3013,6 +3013,8 @@ namespace TShockAPI
 					args.Player.spawnSynced = true;
 					return false;
 				}
+
+				args.TPlayer.team = team;
 				args.TPlayer.Spawn(context);
 				// spawn the player before teleporting
 				NetMessage.SendData((int)PacketTypes.PlayerSpawn, -1, args.Player.Index, null, args.Player.Index, (int)PlayerSpawnContext.ReviveFromDeath);
@@ -4993,6 +4995,7 @@ namespace TShockAPI
 		internal static Dictionary<int, int> projectileCreatesTile = new Dictionary<int, int>
 		{
 			{ ProjectileID.DirtBall, TileID.Dirt },
+			{ ProjectileID.MudBallPlayer, TileID.Mud },
 			{ ProjectileID.SandBallGun, TileID.Sand },
 			{ ProjectileID.EbonsandBallGun, TileID.Ebonsand },
 			{ ProjectileID.PearlSandBallGun, TileID.Pearlsand },
