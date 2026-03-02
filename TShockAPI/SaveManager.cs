@@ -123,30 +123,49 @@ namespace TShockAPI
 							// These can be caused by an unexpected error such as a bad or out of date plugin
 							try
 							{
-								if (task.direct)
-								{
-									OnSaveWorld(new WorldSaveEventArgs());
-									WorldFile.SaveWorld(task.resetTime);
-								}
-								else
-									WorldFile.SaveWorld(task.resetTime);
+                                // Create a cancellation token source with 40 second timeout
+                                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(40));
+                                var saveTask = Task.Run(() =>
+                                {
+                                    if (task.direct)
+                                    {
+                                        OnSaveWorld(new WorldSaveEventArgs());
+                                        WorldFile.SaveWorld(task.resetTime);
+                                    }
+                                    else
+                                        WorldFile.SaveWorld(task.resetTime);
+                                }, cts.Token);
 
-								if (TShock.Config.Settings.AnnounceSave)
-									TShock.Utils.Broadcast(GetString("World saved."), Color.Yellow);
+                                try
+                                {
+                                    // Wait for the save task to complete
+                                    saveTask.Wait(cts.Token);
+                                    if (TShock.Config.Settings.AnnounceSave)
+                                        TShock.Utils.Broadcast(GetString("World saved."), Color.Yellow);
 
-								TShock.Log.Info(GetString("World saved at ({0})", Main.worldPathName));
+                                    TShock.Log.Info(GetString("World saved at ({0})", Main.worldPathName));
+                                }
+                                catch (OperationCanceledException)
+                                {
+                                    // Task was cancelled due to timeout
+                                    string timeoutMessage = GetString("World save operation timed out after 40 seconds");
+                                    TShock.Log.Error(timeoutMessage);
+
+                                    if (TShock.Config.Settings.AnnounceSave)
+                                        TShock.Utils.Broadcast(GetString("World save failed - operation timed out"), Color.Red);
+                                }
 							}
-							catch (Exception e)
+                    		catch (Exception e)
 							{
 								TShock.Log.Error(GetString("World saved failed"));
 								TShock.Log.Error(e.ToString());
 							}
-						}
-					}
-				}
-				_wh.WaitOne();
-			}
-		}
+                }
+            }
+        }
+        _wh.WaitOne();
+    }
+}
 
 		class SaveTask
 		{
