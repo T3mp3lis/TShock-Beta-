@@ -22,6 +22,7 @@ using System.Threading;
 using Terraria;
 using Terraria.IO;
 using TerrariaApi.Server;
+using System.Threading.Tasks;
 
 namespace TShockAPI
 {
